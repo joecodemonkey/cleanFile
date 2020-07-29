@@ -7,7 +7,7 @@ cleanFile is just a simple go utility to clean utf8 data
 ### cleanFile 
 
 ####  -reclen [string]
-        dictionary of words, newline delimited
+        Length of record 
         
         
 ####  Description
