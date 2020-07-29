@@ -17,7 +17,7 @@ func cleanString(stringToClean string) string {
 
 // open a file and dump it's contents line by line to a channel given a record length
 func readFile(cleanQueue chan string, recordLength int) {
-
+	var count int64 = 1
 	defer close(cleanQueue)
 	// created a buffered reader so we can use the neato ReadRune method
 	fileReader := bufio.NewReader(os.Stdin)
@@ -38,9 +38,14 @@ func readFile(cleanQueue chan string, recordLength int) {
 					break
 				} else {
 					// utf8 issue most likely
+					log.Printf("Likely UTF8 Read Error on Record: %d replacing with blank", count)
 					tmpRune = ' '
 				}
 			}
+			if tmpRune == rune(0xFFFD) {
+				log.Printf("Likely UTF8 Read Error on Record: %d replacing with blank", count)
+			}
+			count += 1
 			line = line + string(tmpRune)
 		}
 		cleanQueue <- line
@@ -57,8 +62,8 @@ func writeRecords(outQueue chan string) {
 	for line := range outQueue {
 		count = count + 1
 		_, _ = fileWriter.WriteString(line)
-		if count % 1000 == 0 {
-			log.Print("1000 records")
+		if count % 1000000 == 0 {
+			log.Print("1,000,000 records")
 		}
 	}
 
@@ -67,9 +72,15 @@ func writeRecords(outQueue chan string) {
 }
 
 func cleanRecords(cleanQueue chan string, outQueue chan string) {
+	var count int64 = 1
 	defer close(outQueue)
 	for line := range cleanQueue {
-		outQueue <- cleanString(line)
+		newLine := cleanString(line)
+		if(newLine != line) {
+			log.Printf("Likely UTF8 Cleaning Error on Record: %d replacing with blank", count)
+		}
+		outQueue <- line
+		count += 1
 	}
 }
 
